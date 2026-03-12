@@ -1640,6 +1640,76 @@ class SurveyViewSet(TeamAndOrgViewSetMixin, AccessControlViewSetMixin, viewsets.
         uuids = get_archived_response_uuids(str(survey.id), self.team_id)
         return Response(list(uuids))
 
+    @action(methods=["POST"], detail=True, url_path="reset", required_scopes=["survey:write"])
+    def reset(self, request: request.Request, **kwargs) -> Response:
+        """Reset a survey by archiving all existing responses and restarting it.
+
+        Archives all survey sent, shown, and dismissed events for this survey,
+        then resets start_date to now and clears end_date so the survey is running again.
+        """
+        survey = self.get_object()
+
+        if not survey.start_date:
+            return Response(
+                {"detail": "Cannot reset a survey that has not been launched."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Query ClickHouse for all event UUIDs associated with this survey
+        query = """
+            SELECT uuid
+            FROM events
+            WHERE team_id = %(team_id)s
+              AND event IN (%(sent)s, %(shown)s, %(dismissed)s)
+              AND JSONExtractString(properties, %(survey_id_prop)s) = %(survey_id)s
+        """
+        params = {
+            "team_id": self.team_id,
+            "sent": SurveyEventName.SENT,
+            "shown": SurveyEventName.SHOWN,
+            "dismissed": SurveyEventName.DISMISSED,
+            "survey_id_prop": SurveyEventProperties.SURVEY_ID,
+            "survey_id": str(survey.id),
+        }
+
+        rows = sync_execute(query, params)
+        event_uuids = [row[0] for row in rows]
+
+        if event_uuids:
+            archives_to_create = [
+                SurveyResponseArchive(
+                    team_id=self.team_id,
+                    survey=survey,
+                    response_uuid=uuid,
+                )
+                for uuid in event_uuids
+            ]
+            SurveyResponseArchive.objects.bulk_create(archives_to_create, ignore_conflicts=True)
+
+        now = datetime.now(UTC)
+        survey.start_date = now
+        survey.end_date = None
+        survey.save(update_fields=["start_date", "end_date"])
+
+        log_activity(
+            organization_id=self.organization.id,
+            team_id=self.team_id,
+            user=cast(User, request.user),
+            was_impersonated=is_impersonated_session(request),
+            item_id=survey.id,
+            scope="Survey",
+            activity="reset",
+            detail=Detail(
+                name=survey.name,
+                changes=[
+                    Change(type="Survey", action="changed", field="start_date", after=now.isoformat()),
+                ],
+            ),
+        )
+
+        serializer = SurveySerializer(survey, context=self.get_serializer_context())
+        return Response(serializer.data)
+
     @action(methods=["GET"], detail=False, url_path="stats", required_scopes=["survey:read"])
     def global_stats(self, request: request.Request, **kwargs) -> Response:
         """Get aggregated response statistics across all surveys.

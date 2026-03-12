@@ -5862,3 +5862,59 @@ class TestSurveyResponseArchive(ClickhouseTestMixin, APIBaseTest):
         self.assertIn(uuid1, uuids)
         self.assertIn(uuid2, uuids)
         self.assertNotIn(uuid3, uuids)
+
+    @freeze_time("2024-05-01 12:00:00")
+    def test_reset_survey(self):
+        self.survey.start_date = datetime(2024, 4, 1, tzinfo=UTC)
+        self.survey.end_date = datetime(2024, 4, 15, tzinfo=UTC)
+        self.survey.save()
+
+        event_uuid_1 = str(uuid.uuid4())
+        event_uuid_2 = str(uuid.uuid4())
+        _create_event(
+            team=self.team,
+            event="survey sent",
+            distinct_id="user1",
+            properties={"$survey_id": str(self.survey.id)},
+            event_uuid=event_uuid_1,
+        )
+        _create_event(
+            team=self.team,
+            event="survey shown",
+            distinct_id="user2",
+            properties={"$survey_id": str(self.survey.id)},
+            event_uuid=event_uuid_2,
+        )
+        flush_persons_and_events()
+
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.survey.refresh_from_db()
+        self.assertEqual(self.survey.start_date, datetime(2024, 5, 1, 12, 0, 0, tzinfo=UTC))
+        self.assertIsNone(self.survey.end_date)
+
+        archived_uuids = set(
+            SurveyResponseArchive.objects.filter(team=self.team, survey=self.survey).values_list(
+                "response_uuid", flat=True
+            )
+        )
+        self.assertIn(uuid.UUID(event_uuid_1), archived_uuids)
+        self.assertIn(uuid.UUID(event_uuid_2), archived_uuids)
+
+    def test_reset_survey_not_launched(self):
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset/")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @freeze_time("2024-05-01 12:00:00")
+    def test_reset_survey_no_responses(self):
+        self.survey.start_date = datetime(2024, 4, 1, tzinfo=UTC)
+        self.survey.save()
+
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.survey.refresh_from_db()
+        self.assertEqual(self.survey.start_date, datetime(2024, 5, 1, 12, 0, 0, tzinfo=UTC))
+        self.assertIsNone(self.survey.end_date)
+        self.assertEqual(SurveyResponseArchive.objects.filter(team=self.team, survey=self.survey).count(), 0)

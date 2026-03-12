@@ -3,7 +3,7 @@ import './SurveyView.scss'
 import { useActions, useValues } from 'kea'
 import { useEffect, useMemo, useState } from 'react'
 
-import { IconArchive, IconGraph, IconLlmAnalytics, IconThumbsDown, IconThumbsUp, IconTrash } from '@posthog/icons'
+import { IconArchive, IconGraph, IconLlmAnalytics, IconRefresh, IconThumbsDown, IconThumbsUp, IconTrash } from '@posthog/icons'
 import { LemonButton, LemonDialog, LemonDivider, Tooltip } from '@posthog/lemon-ui'
 
 import { AccessControlAction } from 'lib/components/AccessControlAction'
@@ -22,7 +22,7 @@ import { LaunchSurveyButton } from 'scenes/surveys/components/LaunchSurveyButton
 import { SurveyQuestionVisualization } from 'scenes/surveys/components/question-visualizations/SurveyQuestionVisualization'
 import { SurveyFeedbackButton } from 'scenes/surveys/components/SurveyFeedbackButton'
 import { DuplicateToProjectModal } from 'scenes/surveys/DuplicateToProjectModal'
-import { canDeleteSurvey, openArchiveSurveyDialog, openDeleteSurveyDialog } from 'scenes/surveys/surveyDialogs'
+import { canDeleteSurvey, openArchiveSurveyDialog, openDeleteSurveyDialog, openResetSurveyDialog } from 'scenes/surveys/surveyDialogs'
 import { surveyLogic } from 'scenes/surveys/surveyLogic'
 import { SurveyNoResponsesBanner } from 'scenes/surveys/SurveyNoResponsesBanner'
 import { SurveyOverview } from 'scenes/surveys/SurveyOverview'
@@ -91,7 +91,7 @@ export function SurveyView({ id }: { id: string }): JSX.Element {
 
 function SurveyViewLegacy({ id }: { id: string }): JSX.Element {
     const { survey, surveyLoading } = useValues(surveyLogic)
-    const { editingSurvey, updateSurvey, stopSurvey, resumeSurvey, archiveSurvey } = useActions(surveyLogic)
+    const { editingSurvey, updateSurvey, stopSurvey, resumeSurvey, archiveSurvey, resetSurvey } = useActions(surveyLogic)
     const { deleteSurvey, duplicateSurvey, setSurveyToDuplicate } = useActions(surveysLogic)
     const { currentOrganization } = useValues(organizationLogic)
 
@@ -141,6 +141,24 @@ function SurveyViewLegacy({ id }: { id: string }): JSX.Element {
                             />
                         </ScenePanelActionsSection>
                         <ScenePanelDivider />
+                        {!survey.archived && survey.start_date && (
+                            <ScenePanelActionsSection>
+                                <AccessControlAction
+                                    resourceType={AccessControlResourceType.Survey}
+                                    minAccessLevel={AccessControlLevel.Editor}
+                                    userAccessLevel={survey.user_access_level}
+                                >
+                                    <ButtonPrimitive
+                                        menuItem
+                                        data-attr={`${RESOURCE_TYPE}-reset`}
+                                        onClick={() => openResetSurveyDialog(resetSurvey)}
+                                    >
+                                        <IconRefresh />
+                                        Reset
+                                    </ButtonPrimitive>
+                                </AccessControlAction>
+                            </ScenePanelActionsSection>
+                        )}
                         {!survey.archived && (
                             <ScenePanelActionsSection>
                                 <AccessControlAction

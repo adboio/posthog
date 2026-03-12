@@ -521,6 +521,7 @@ export const surveyLogic = kea<surveyLogicType>([
         resetBranchingForQuestion: (questionIndex) => ({ questionIndex }),
         deleteBranchingLogic: true,
         archiveSurvey: true,
+        resetSurvey: true,
         setWritingHTMLDescription: (writingHTML: boolean) => ({ writingHTML }),
         setSelectedPageIndex: (idx: number | null) => ({ idx }),
         setSelectedSection: (section: SurveyEditSection | null) => ({ section }),
@@ -698,6 +699,9 @@ export const surveyLogic = kea<surveyLogicType>([
                     },
                 })
                 return response
+            },
+            resetSurvey: async () => {
+                return await api.surveys.reset(props.id)
             },
         },
         surveyBaseStats: {
@@ -949,6 +953,11 @@ export const surveyLogic = kea<surveyLogicType>([
             },
             resumeSurveySuccess: () => {
                 actions.loadSurveys()
+            },
+            resetSurveySuccess: ({ survey }) => {
+                lemonToast.success(<>Survey {survey.name} has been reset</>)
+                actions.loadSurveys()
+                actions.loadArchivedResponseUuids()
             },
             archiveSurvey: () => {
                 const updates: Partial<Survey> & { intentContext?: ProductIntentContext } = {

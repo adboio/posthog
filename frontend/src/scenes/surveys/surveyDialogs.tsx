@@ -69,6 +69,36 @@ export function openArchiveSurveyDialog(survey: Pick<Survey, 'start_date' | 'end
     })
 }
 
+export function openResetSurveyDialog(onConfirm: () => void): void {
+    LemonDialog.open({
+        title: 'Reset this survey?',
+        content: (
+            <div className="text-sm text-secondary">
+                <p>Resetting will:</p>
+                <ul className="list-disc ml-4 mt-2">
+                    <li>Archive all existing responses</li>
+                    <li>Restart the survey with a new start date</li>
+                </ul>
+                <p className="mt-2 text-muted">
+                    Note: Response events are not deleted — they are archived and hidden from results.
+                </p>
+            </div>
+        ),
+        primaryButton: {
+            children: 'Reset survey',
+            type: 'primary',
+            status: 'danger',
+            onClick: onConfirm,
+            size: 'small',
+        },
+        secondaryButton: {
+            children: 'Cancel',
+            type: 'tertiary',
+            size: 'small',
+        },
+    })
+}
+
 export function canDeleteSurvey(survey: Pick<Survey, 'archived' | 'start_date'>): boolean {
     return survey.archived || !survey.start_date
 }

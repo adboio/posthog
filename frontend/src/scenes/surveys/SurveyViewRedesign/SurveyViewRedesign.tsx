@@ -2,7 +2,7 @@ import { useActions, useValues } from 'kea'
 import { router } from 'kea-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { IconArchive, IconCode, IconTrash } from '@posthog/icons'
+import { IconArchive, IconCode, IconRefresh, IconTrash } from '@posthog/icons'
 import { LemonButton, LemonDialog, LemonDivider } from '@posthog/lemon-ui'
 
 import { AccessControlAction } from 'lib/components/AccessControlAction'
@@ -19,7 +19,7 @@ import { LaunchSurveyButton } from 'scenes/surveys/components/LaunchSurveyButton
 import { SurveyQuestionVisualization } from 'scenes/surveys/components/question-visualizations/SurveyQuestionVisualization'
 import { SurveyFeedbackButton } from 'scenes/surveys/components/SurveyFeedbackButton'
 import { DuplicateToProjectModal } from 'scenes/surveys/DuplicateToProjectModal'
-import { canDeleteSurvey, openArchiveSurveyDialog, openDeleteSurveyDialog } from 'scenes/surveys/surveyDialogs'
+import { canDeleteSurvey, openArchiveSurveyDialog, openDeleteSurveyDialog, openResetSurveyDialog } from 'scenes/surveys/surveyDialogs'
 import { SurveyHeadline } from 'scenes/surveys/SurveyHeadline'
 import { surveyLogic } from 'scenes/surveys/surveyLogic'
 import { SurveyNoResponsesBanner } from 'scenes/surveys/SurveyNoResponsesBanner'
@@ -59,7 +59,7 @@ const RESOURCE_TYPE = 'survey'
 
 export function SurveyViewRedesign(): JSX.Element {
     const { survey, surveyLoading } = useValues(surveyLogic)
-    const { editingSurvey, updateSurvey, archiveSurvey } = useActions(surveyLogic)
+    const { editingSurvey, updateSurvey, archiveSurvey, resetSurvey } = useActions(surveyLogic)
     const { setScenePanelOpen } = useActions(sceneLayoutLogic)
     const { openSidePanel, closeSidePanel } = useActions(sidePanelStateLogic)
     const { deleteSurvey, duplicateSurvey, setSurveyToDuplicate } = useActions(surveysLogic)
@@ -223,6 +223,22 @@ export function SurveyViewRedesign(): JSX.Element {
                             <IconCode />
                             SQL query
                         </ButtonPrimitive>
+                    )}
+                    {!survey.archived && survey.start_date && (
+                        <AccessControlAction
+                            resourceType={AccessControlResourceType.Survey}
+                            minAccessLevel={AccessControlLevel.Editor}
+                            userAccessLevel={survey.user_access_level}
+                        >
+                            <ButtonPrimitive
+                                menuItem
+                                data-attr={`${RESOURCE_TYPE}-reset`}
+                                onClick={() => openResetSurveyDialog(resetSurvey)}
+                            >
+                                <IconRefresh />
+                                Reset
+                            </ButtonPrimitive>
+                        </AccessControlAction>
                     )}
                     {!survey.archived && (
                         <AccessControlAction

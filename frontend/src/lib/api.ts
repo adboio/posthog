@@ -4397,6 +4397,9 @@ const api = {
         async update(surveyId: Survey['id'], data: Partial<Survey>): Promise<Survey> {
             return await new ApiRequest().survey(surveyId).update({ data })
         },
+        async reset(surveyId: Survey['id']): Promise<Survey> {
+            return await new ApiRequest().survey(surveyId).withAction('reset').create()
+        },
         async getResponsesCount(surveyIds?: string): Promise<{ [key: string]: number }> {
             return await new ApiRequest()
                 .surveysResponsesCount()
