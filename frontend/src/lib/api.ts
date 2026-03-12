@@ -4490,6 +4490,9 @@ const api = {
                 .withAction('duplicate_to_projects')
                 .create({ data: { target_team_ids: targetTeamIds } })
         },
+        async reset(surveyId: Survey['id']): Promise<Survey> {
+            return await new ApiRequest().survey(surveyId).withAction('reset').create()
+        },
         async archiveResponse(surveyId: Survey['id'], responseUuid: string): Promise<{ success: boolean }> {
             return await new ApiRequest().survey(surveyId).withAction(`responses/${responseUuid}/archive`).create()
         },

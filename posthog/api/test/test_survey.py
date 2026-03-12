@@ -5862,3 +5862,73 @@ class TestSurveyResponseArchive(ClickhouseTestMixin, APIBaseTest):
         self.assertIn(uuid1, uuids)
         self.assertIn(uuid2, uuids)
         self.assertNotIn(uuid3, uuids)
+
+
+class TestSurveyReset(ClickhouseTestMixin, APIBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.survey = Survey.objects.create(
+            team=self.team,
+            name="Test Survey",
+            type="popover",
+            start_date=datetime(2024, 1, 1, tzinfo=UTC),
+            questions=[{"type": "open", "question": "What do you think?"}],
+        )
+
+    @freeze_time("2024-06-01 12:00:00")
+    def test_reset_survey_updates_start_date_and_clears_end_date(self):
+        self.survey.end_date = datetime(2024, 3, 1, tzinfo=UTC)
+        self.survey.headline_summary = "Old summary"
+        self.survey.headline_response_count = 10
+        self.survey.question_summaries = {"q1": {"summary": "old"}}
+        self.survey.save()
+
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.survey.refresh_from_db()
+        self.assertEqual(self.survey.start_date, datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC))
+        self.assertIsNone(self.survey.end_date)
+        self.assertIsNone(self.survey.headline_summary)
+        self.assertIsNone(self.survey.headline_response_count)
+        self.assertIsNone(self.survey.question_summaries)
+        self.assertEqual(self.survey.current_iteration, 1)
+
+    def test_reset_survey_archives_existing_responses(self):
+        event_uuid = str(uuid.uuid4())
+        _create_event(
+            event="survey sent",
+            team=self.team,
+            distinct_id="user1",
+            properties={"$survey_id": str(self.survey.id)},
+            event_uuid=event_uuid,
+        )
+        flush_persons_and_events()
+
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        archive_exists = SurveyResponseArchive.objects.filter(
+            team=self.team, survey=self.survey, response_uuid=event_uuid
+        ).exists()
+        self.assertTrue(archive_exists)
+
+    def test_reset_draft_survey_returns_400(self):
+        draft_survey = Survey.objects.create(
+            team=self.team,
+            name="Draft Survey",
+            type="popover",
+            questions=[{"type": "open", "question": "?"}],
+        )
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{draft_survey.id}/reset")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @freeze_time("2024-06-01 12:00:00")
+    def test_reset_survey_logs_activity(self):
+        response = self.client.post(f"/api/projects/{self.team.id}/surveys/{self.survey.id}/reset")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        activity = self.client.get(f"/api/projects/{self.team.id}/surveys/activity").json()
+        self.assertEqual(len(activity["results"]), 1)
+        self.assertEqual(activity["results"][0]["activity"], "reset")
+        self.assertEqual(activity["results"][0]["scope"], "Survey")

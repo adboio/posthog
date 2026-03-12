@@ -1640,6 +1640,78 @@ class SurveyViewSet(TeamAndOrgViewSetMixin, AccessControlViewSetMixin, viewsets.
         uuids = get_archived_response_uuids(str(survey.id), self.team_id)
         return Response(list(uuids))
 
+    @action(methods=["POST"], detail=True, url_path="reset", required_scopes=["survey:write"])
+    def reset(self, request: request.Request, **kwargs) -> Response:
+        """Reset a survey by archiving all existing responses and restarting it."""
+        survey = self.get_object()
+
+        if not survey.start_date:
+            return Response({"detail": "Cannot reset a survey that has not been launched"}, status=400)
+
+        # Query ClickHouse for all "survey sent" event UUIDs for this survey
+        already_archived = get_archived_response_uuids(str(survey.id), self.team_id)
+
+        query = f"""
+            SELECT uuid
+            FROM events
+            WHERE event = '{SurveyEventName.SENT}'
+              AND JSONExtractString(properties, '{SurveyEventProperties.SURVEY_ID}') = %(survey_id)s
+              AND team_id = %(team_id)s
+        """
+        results = sync_execute(query, {"survey_id": str(survey.id), "team_id": self.team_id})
+        new_uuids = [str(row[0]) for row in results if str(row[0]) not in already_archived]
+
+        # Bulk-create archive records for all non-archived responses
+        if new_uuids:
+            SurveyResponseArchive.objects.bulk_create(
+                [
+                    SurveyResponseArchive(
+                        team_id=self.team_id,
+                        survey=survey,
+                        response_uuid=uuid,
+                    )
+                    for uuid in new_uuids
+                ],
+                ignore_conflicts=True,
+            )
+
+        # Reset the survey: restart with current timestamp
+        now = datetime.now(tz=UTC)
+        before = survey.__dict__.copy()
+
+        survey.start_date = now
+        survey.end_date = None
+        survey.current_iteration = 1
+        survey.current_iteration_start_date = now
+        survey.headline_summary = None
+        survey.headline_response_count = None
+        survey.question_summaries = None
+        survey.save()
+
+        log_activity(
+            organization_id=self.organization.id,
+            team_id=self.team_id,
+            user=cast(User, request.user),
+            was_impersonated=is_impersonated_session(request),
+            item_id=survey.id,
+            scope="Survey",
+            activity="reset",
+            detail=Detail(
+                name=survey.name,
+                changes=[
+                    Change(
+                        type="Survey",
+                        action="changed",
+                        field="start_date",
+                        before=str(before.get("start_date")),
+                        after=str(survey.start_date),
+                    ),
+                ],
+            ),
+        )
+
+        return Response(SurveySerializer(survey, context=self.get_serializer_context()).data)
+
     @action(methods=["GET"], detail=False, url_path="stats", required_scopes=["survey:read"])
     def global_stats(self, request: request.Request, **kwargs) -> Response:
         """Get aggregated response statistics across all surveys.
