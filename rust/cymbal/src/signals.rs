@@ -32,13 +32,13 @@ pub struct IssueSignalContext<'a> {
 impl<'a> From<IssueSignalContext<'a>> for EmitSignalRequest {
     fn from(ctx: IssueSignalContext<'a>) -> Self {
         let header = format!(
-            "{}: {}: {}\n",
+            "{}:\n{}: {}\n",
             ctx.preamble,
             ctx.issue.name.as_deref().unwrap_or("Unknown"),
             ctx.issue.description.as_deref().unwrap_or(""),
         );
         let stacktrace = ctx.props.print_stacktrace();
-        let description = format!("{header}{stacktrace}");
+        let description = format!("{header}\n```\n{stacktrace}\n```");
 
         EmitSignalRequest {
             source_product: "error_tracking",
@@ -123,7 +123,6 @@ impl SignalClient {
             "{}/api/projects/{}/internal/signals/emit",
             self.base_url, team_id
         );
-        println!("Sending signal!");
         match self
             .http
             .post(&url)
