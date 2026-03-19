@@ -980,6 +980,7 @@ async def wait_for_signal_in_clickhouse_activity(input: WaitForClickHouseInput) 
 
     signal_ids = [s.signal_id for s in input.signals]
     timestamps = [s.timestamp for s in input.signals]
+    # Widen the timestamp range to account for precision loss (Python microseconds vs ClickHouse DateTime64(3) milliseconds)
     min_timestamp = min(timestamps) - timedelta(minutes=2)
     max_timestamp = max(timestamps) + timedelta(minutes=2)
 
