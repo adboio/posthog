@@ -304,15 +304,12 @@ async fn emit_spiking_events(
 
     // Emit signals for spiking issues
     for spike in &acquired_locks {
-        context
-            .signal_client
-            .emit_issue_spiking(
-                &spike.issue,
-                &spike.props,
-                spike.computed_baseline,
-                spike.current_bucket_value as f64,
-            )
-            .await;
+        context.signal_client.emit_issue_spiking(
+            &spike.issue,
+            &spike.props,
+            spike.computed_baseline,
+            spike.current_bucket_value as f64,
+        );
     }
 
     let emit_timer = common_metrics::timing_guard(SPIKE_EMIT_EVENTS_TIME, &[]);
@@ -474,7 +471,10 @@ async fn get_spiking_issues(
         if is_spiking(current_value, baseline, config) {
             spiking.push(SpikingIssue {
                 issue: issue.clone(),
-                props: issue_props_by_id.get(&bucket.issue_id).cloned().unwrap_or_default(),
+                props: issue_props_by_id
+                    .get(&bucket.issue_id)
+                    .cloned()
+                    .unwrap_or_default(),
                 computed_baseline: baseline,
                 current_bucket_value: current_value,
             });

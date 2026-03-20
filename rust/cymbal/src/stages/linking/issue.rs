@@ -113,8 +113,7 @@ async fn resolve_issue(
             let output_props: OutputErrProps = event_properties.to_output(issue.id)?;
             context
                 .signal_client
-                .emit_issue_reopened(&issue, &output_props)
-                .await;
+                .emit_issue_reopened(&issue, &output_props);
             send_issue_reopened_alert(context, &issue, assignment, output_props, &event_timestamp)
                 .await?;
         }
@@ -166,8 +165,7 @@ async fn resolve_issue(
             let output_props: OutputErrProps = event_properties.to_output(issue.id)?;
             context
                 .signal_client
-                .emit_issue_reopened(&issue, &output_props)
-                .await;
+                .emit_issue_reopened(&issue, &output_props);
             send_issue_reopened_alert(context, &issue, assignment, output_props, &event_timestamp)
                 .await?;
         }
@@ -180,8 +178,7 @@ async fn resolve_issue(
         send_new_fingerprint_event(context, &issue, &output_props).await?;
         context
             .signal_client
-            .emit_issue_created(&issue, &output_props)
-            .await;
+            .emit_issue_created(&issue, &output_props);
         send_issue_created_alert(context, &issue, assignment, output_props, &event_timestamp)
             .await?;
         txn.commit().await?;

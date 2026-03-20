@@ -24,7 +24,7 @@ pub struct IssueSignalContext<'a> {
     pub props: &'a OutputErrProps,
     pub source_type: &'static str,
     /// Brief LLM-facing explanation of what this signal means, e.g. "New issue" or "Issue reopened".
-    pub preamble: &'static str,
+    pub preamble: String,
     pub weight: f64,
     pub extra: serde_json::Value,
 }
@@ -75,7 +75,7 @@ impl SignalClient {
             issue,
             props,
             source_type: "issue_created",
-            preamble: "New error tracking issue created - this particular exception was observed for the first time",
+            preamble: "New error tracking issue created - this particular exception was observed for the first time".to_string(),
             weight: 0.4,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
@@ -89,7 +89,7 @@ impl SignalClient {
             issue,
             props,
             source_type: "issue_reopened",
-            preamble: "Previously resolved error tracking issue has reappeared - this particular exception was observed previously, and thought to be resolved, but has reappeared",
+            preamble: "Previously resolved error tracking issue has reappeared - this particular exception was observed previously, and thought to be resolved, but has reappeared".to_string(),
             weight: 0.7, // We think reopened exceptions matter quite a bit more than new ones, since someone took the time to resolve them
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
@@ -105,14 +105,19 @@ impl SignalClient {
         computed_baseline: f64,
         current_bucket_value: f64,
     ) {
+        let preamble = format!(
+            "This error tracking issue is experiencing a spike in occurrences (baseline: {computed_baseline:.1}, current: {current_bucket_value:.1})"
+        );
         let request = EmitSignalRequest::from(IssueSignalContext {
             issue,
             props,
             source_type: "issue_spiking",
-            preamble: "This error tracking issue is experiencing a spike in occurrences",
+            preamble,
             weight: 0.7,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
+                "computed_baseline": computed_baseline,
+                "current_bucket_value": current_bucket_value,
             }),
         });
         self.send(issue.team_id, request).await;
@@ -155,28 +160,40 @@ impl MaybeSignalClient {
         Self(Some(Arc::new(client)))
     }
 
-    pub async fn emit_issue_created(&self, issue: &Issue, props: &OutputErrProps) {
-        if let Some(c) = &self.0 {
-            c.emit_issue_created(issue, props).await;
+    pub fn emit_issue_created(&self, issue: &Issue, props: &OutputErrProps) {
+        if let Some(c) = self.0.clone() {
+            let issue = issue.clone();
+            let props = props.clone();
+            tokio::spawn(async move {
+                c.emit_issue_created(&issue, &props).await;
+            });
         }
     }
 
-    pub async fn emit_issue_reopened(&self, issue: &Issue, props: &OutputErrProps) {
-        if let Some(c) = &self.0 {
-            c.emit_issue_reopened(issue, props).await;
+    pub fn emit_issue_reopened(&self, issue: &Issue, props: &OutputErrProps) {
+        if let Some(c) = self.0.clone() {
+            let issue = issue.clone();
+            let props = props.clone();
+            tokio::spawn(async move {
+                c.emit_issue_reopened(&issue, &props).await;
+            });
         }
     }
 
-    pub async fn emit_issue_spiking(
+    pub fn emit_issue_spiking(
         &self,
         issue: &Issue,
         props: &OutputErrProps,
         computed_baseline: f64,
         current_bucket_value: f64,
     ) {
-        if let Some(c) = &self.0 {
-            c.emit_issue_spiking(issue, props, computed_baseline, current_bucket_value)
-                .await;
+        if let Some(c) = self.0.clone() {
+            let issue = issue.clone();
+            let props = props.clone();
+            tokio::spawn(async move {
+                c.emit_issue_spiking(&issue, &props, computed_baseline, current_bucket_value)
+                    .await;
+            });
         }
     }
 }
