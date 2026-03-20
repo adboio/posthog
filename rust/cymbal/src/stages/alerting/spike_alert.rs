@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
+};
 
 use uuid::Uuid;
 
@@ -46,9 +49,9 @@ impl Stage for SpikeAlertStage {
                 continue;
             };
             // Keep one OutputErrProps per issue (they share the same stack shape)
-            if !issue_props_by_id.contains_key(&issue.id) {
+            if let Entry::Vacant(e) = issue_props_by_id.entry(issue.id) {
                 if let Ok(props) = evt.to_output(issue.id) {
-                    issue_props_by_id.insert(issue.id, props);
+                    e.insert(props);
                 }
             }
             issues.push(issue.clone());
