@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use serde::Serialize;
+use tiktoken_rs::cl100k_base;
 use tracing::warn;
 
 use crate::config::Config;
@@ -37,7 +38,10 @@ impl<'a> From<IssueSignalContext<'a>> for EmitSignalRequest {
             ctx.issue.name.as_deref().unwrap_or("Unknown"),
             ctx.issue.description.as_deref().unwrap_or(""),
         );
-        let stacktrace = ctx.props.print_stacktrace();
+        let header_tokens = cl100k_base()
+            .map(|bpe| bpe.encode_with_special_tokens(&header).len())
+            .unwrap_or(0);
+        let stacktrace = ctx.props.print_stacktrace(Some(8000 - header_tokens));
         let description = format!("{header}\n```\n{stacktrace}\n```");
 
         EmitSignalRequest {
@@ -118,8 +122,6 @@ impl SignalClient {
             weight: 1.0,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
-                "computed_baseline": computed_baseline,
-                "current_bucket_value": current_bucket_value,
             }),
         });
         self.send(issue.team_id, request).await;

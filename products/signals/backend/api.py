@@ -61,7 +61,7 @@ async def emit_signal(
     if not organization.is_ai_data_processing_approved:
         return
 
-    is_enabled = await database_sync_to_async(SignalSourceConfig.is_source_enabled)(
+    is_enabled = await database_sync_to_async(SignalSourceConfig.is_source_enabled, thread_sensitive=False)(
         team.id, source_product, source_type
     )
     if not is_enabled and not settings.DEBUG:
