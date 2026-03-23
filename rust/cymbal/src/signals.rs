@@ -105,8 +105,10 @@ impl SignalClient {
         computed_baseline: f64,
         current_bucket_value: f64,
     ) {
+        let multiplier = current_bucket_value / computed_baseline;
         let preamble = format!(
-            "This error tracking issue is experiencing a spike in occurrences (baseline: {computed_baseline:.1}, current: {current_bucket_value:.1})"
+            "This error tracking issue is experiencing a spike in occurrences
+            (baseline: {computed_baseline:.1}, current: {current_bucket_value:.1}) ({multiplier:.1} over baseline)"
         );
         let request = EmitSignalRequest::from(IssueSignalContext {
             issue,
