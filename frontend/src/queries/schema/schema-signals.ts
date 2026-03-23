@@ -122,6 +122,9 @@ export interface LinearIssueSignalInput {
 
 export interface ErrorTrackingSignalExtra {
     fingerprint: string
+    /** Present when `source_type` is `issue_spiking` (Cymbal spike detection). */
+    computed_baseline?: number
+    current_bucket_value?: number
 }
 
 export interface ErrorTrackingSignalInput {

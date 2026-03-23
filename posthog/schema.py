@@ -1438,6 +1438,11 @@ class ErrorTrackingSignalExtra(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    computed_baseline: float | None = Field(
+        default=None,
+        description=("Present when `source_type` is `issue_spiking` (Cymbal spike detection)."),
+    )
+    current_bucket_value: float | None = None
     fingerprint: str
 
 

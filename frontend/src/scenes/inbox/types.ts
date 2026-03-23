@@ -49,6 +49,7 @@ export enum SignalSourceProduct {
     GITHUB = 'github',
     LINEAR = 'linear',
     ZENDESK = 'zendesk',
+    ERROR_TRACKING = 'error_tracking',
 }
 
 export enum SignalSourceType {
@@ -56,6 +57,9 @@ export enum SignalSourceType {
     EVALUATION = 'evaluation',
     ISSUE = 'issue',
     TICKET = 'ticket',
+    ISSUE_CREATED = 'issue_created',
+    ISSUE_REOPENED = 'issue_reopened',
+    ISSUE_SPIKING = 'issue_spiking',
 }
 
 export interface ToggleSignalSourceParams {

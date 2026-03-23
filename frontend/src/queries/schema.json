@@ -13567,6 +13567,13 @@
         "ErrorTrackingSignalExtra": {
             "additionalProperties": false,
             "properties": {
+                "computed_baseline": {
+                    "description": "Present when `source_type` is `issue_spiking` (Cymbal spike detection).",
+                    "type": "number"
+                },
+                "current_bucket_value": {
+                    "type": "number"
+                },
                 "fingerprint": {
                     "type": "string"
                 }
