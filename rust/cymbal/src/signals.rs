@@ -76,7 +76,7 @@ impl SignalClient {
             props,
             source_type: "issue_created",
             preamble: "New error tracking issue created - this particular exception was observed for the first time".to_string(),
-            weight: 0.4,
+            weight: 1.0,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
             }),
@@ -90,7 +90,7 @@ impl SignalClient {
             props,
             source_type: "issue_reopened",
             preamble: "Previously resolved error tracking issue has reappeared - this particular exception was observed previously, and thought to be resolved, but has reappeared".to_string(),
-            weight: 0.7, // We think reopened exceptions matter quite a bit more than new ones, since someone took the time to resolve them
+            weight: 1.0,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
             }),
@@ -113,7 +113,7 @@ impl SignalClient {
             props,
             source_type: "issue_spiking",
             preamble,
-            weight: 0.7,
+            weight: 1.0,
             extra: serde_json::json!({
                 "fingerprint": props.fingerprint,
                 "computed_baseline": computed_baseline,
