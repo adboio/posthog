@@ -8226,6 +8226,12 @@ class COPODDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["copod"] = "copod"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class CacheMissResponse(BaseModel):
@@ -11261,6 +11267,12 @@ class ECODDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["ecod"] = "ecod"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class EndpointRunRequest(BaseModel):
@@ -12308,6 +12320,12 @@ class HBOSDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["hbos"] = "hbos"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class HeatMapQuerySource(RootModel[EventsNode]):
@@ -12434,6 +12452,12 @@ class IsolationForestDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["isolation_forest"] = "isolation_forest"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class KNNDetectorConfig(BaseModel):
@@ -12450,6 +12474,12 @@ class KNNDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["knn"] = "knn"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class LOFDetectorConfig(BaseModel):
@@ -12462,6 +12492,12 @@ class LOFDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["lof"] = "lof"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class LifecycleDataWarehouseNode(BaseModel):
@@ -12845,6 +12881,12 @@ class OCSVMDetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["ocsvm"] = "ocsvm"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class PCADetectorConfig(BaseModel):
@@ -12856,6 +12898,12 @@ class PCADetectorConfig(BaseModel):
     )
     threshold: float | None = Field(default=None, description="Anomaly probability threshold (default: 0.9)")
     type: Literal["pca"] = "pca"
+    window: int | None = Field(
+        default=None,
+        description=(
+            "Rolling window size — how many historical data points to train on (default: based on calculation interval)"
+        ),
+    )
 
 
 class PathsQueryResponse(BaseModel):
