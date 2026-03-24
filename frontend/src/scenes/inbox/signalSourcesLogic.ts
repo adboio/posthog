@@ -9,9 +9,8 @@ import { FEATURE_FLAGS } from 'lib/constants'
 import { externalDataSourcesLogic } from 'scenes/data-warehouse/externalDataSourcesLogic'
 
 import { ExternalDataSourceType } from '~/queries/schema/schema-general'
-import { ExternalDataSource, ExternalDataSourceSchema, RecordingUniversalFilters } from '~/types'
-
 import { SignalSourceProduct, SignalSourceType } from '~/queries/schema/schema-signals'
+import { ExternalDataSource, ExternalDataSourceSchema, RecordingUniversalFilters } from '~/types'
 
 import type { signalSourcesLogicType } from './signalSourcesLogicType'
 import { SignalSourceConfig, SignalSourceConfigStatus, ToggleSignalSourceParams } from './types'
