@@ -206,9 +206,6 @@ function ErrorTrackingSignalCard({
     extra: ErrorTrackingSignalExtra
 }): JSX.Element {
     const fingerprintShort = extra.fingerprint.length > 14 ? `${extra.fingerprint.slice(0, 14)}…` : extra.fingerprint
-    const isSpike = signal.source_type === 'issue_spiking'
-    const hasSpikeMetrics =
-        isSpike && (extra.computed_baseline !== undefined || extra.current_bucket_value !== undefined)
 
     return (
         <div className="border rounded p-3 bg-surface-primary">
@@ -226,16 +223,6 @@ function ErrorTrackingSignalCard({
                         </span>
                     </span>
                 </span>
-                {hasSpikeMetrics && (
-                    <>
-                        <span>·</span>
-                        <span>
-                            Baseline: {extra.computed_baseline !== undefined ? extra.computed_baseline.toFixed(1) : '—'}{' '}
-                            · Current:{' '}
-                            {extra.current_bucket_value !== undefined ? extra.current_bucket_value.toFixed(1) : '—'}
-                        </span>
-                    </>
-                )}
                 <span className="flex-1" />
                 <Link
                     to={urls.errorTrackingIssue(signal.source_id, { fingerprint: extra.fingerprint })}

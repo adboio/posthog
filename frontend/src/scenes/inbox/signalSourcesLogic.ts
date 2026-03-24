@@ -11,14 +11,10 @@ import { externalDataSourcesLogic } from 'scenes/data-warehouse/externalDataSour
 import { ExternalDataSourceType } from '~/queries/schema/schema-general'
 import { ExternalDataSource, ExternalDataSourceSchema, RecordingUniversalFilters } from '~/types'
 
+import { SignalSourceProduct, SignalSourceType } from '~/queries/schema/schema-signals'
+
 import type { signalSourcesLogicType } from './signalSourcesLogicType'
-import {
-    SignalSourceConfig,
-    SignalSourceConfigStatus,
-    SignalSourceProduct,
-    SignalSourceType,
-    ToggleSignalSourceParams,
-} from './types'
+import { SignalSourceConfig, SignalSourceConfigStatus, ToggleSignalSourceParams } from './types'
 
 export type DataWarehouseSource = 'Linear' | 'Zendesk' | 'Github'
 
